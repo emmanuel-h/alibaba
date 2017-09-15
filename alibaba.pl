@@ -1,43 +1,43 @@
-:-dynamic(nombresRencontres/1).
+:-dynamic(seenNumbers/1).
 
-%alibaba(+Taille)
-alibaba(Taille):-
-	creation(Taille,Liste),
-	permutation(Liste,Liste2),
-	retractall(nombresRencontres(_)),
-	verifierTete(Liste2),
-	verifierPermutation(Liste2,1,Taille,1,0),
-	write(Liste2).
+%alibaba(+Size)
+alibaba(Size):-
+	creation(Size,List),
+	permutation(List,List2),
+	retractall(seenNumbers(_)),
+	verifyHead(List2),
+	verifyPermutation(List2,1,Size,1,0),
+	write(List2).
 	
-% Vérifie que la tête de la liste soit bien 1
-verifierTete([T|_]):-
+% Check that the head of the list is 1
+verifyHead([T|_]):-
 	T=1.
 
-% Si on a le chef des voleurs comme valeur actuelle, il faut vérifier qu'au moins la moitié des autres voleurs ont été délivrés
-chefVoleurs(Taille,NombreActuel,Compteur):-
-	(NombreActuel =:= 2 ->
-	N is Taille /2,
-	(Compteur >= N ->true;fail);true).
+% If we have the robbers leader as actual value, we have to check that at least half of the other robbers are free
+robbersLeader(Size,ActualNumber,Counter):-
+	(ActualNumber =:= 2 ->
+	N is Size /2,
+	(Counter >= N ->true;fail);true).
+
+% Calculate the next index regarding actual index and the number of the prisonner who sit at this index
+nextIndex([T|_],1,T):-!.
+nextIndex([_|List],NextIndex,NextNumber):-
+	PI is NextIndex-1,
+	nextIndex(List,PI,NextNumber).
 	
-% Calcule le prochain indice en fonction de l'indice actuelle et du numéro du prisonnier assis à cet indice
-prochainIndice([T|_],1,T):-!.
-prochainIndice([_|Liste],ProchainIndice,ProchainNombre):-
-	PI is ProchainIndice-1,
-	prochainIndice(Liste,PI,ProchainNombre).
+% Check if the permutation leads to a solution or not
+verifyPermutation(List,CurrentIndex,Size,ActualNumber,Counter):-
+	robbersLeader(Size,ActualNumber,Counter),
+	(seenNumbers(ActualNumber)->(Counter=:=Size->true;fail);
+	asserta(seenNumbers(ActualNumber)),
+	Counter2 is Counter + 1,
+	X is ActualNumber + CurrentIndex,
+	Y is CurrentIndex - (Size - ActualNumber),
+	(X =< Size ->
+	nextIndex(List,X,NextNumber),verifyPermutation(List,X,Size,NextNumber,Counter2) ;
+	nextIndex(List,Y,NextNumber),verifyPermutation(List,Y,Size,NextNumber,Counter2))).
 	
-% Regarde si la permutation effectuée amène à une solution ou non.
-verifierPermutation(Liste,IndiceCourant,Taille,NombreActuel,Compteur):-
-	chefVoleurs(Taille,NombreActuel,Compteur),
-	(nombresRencontres(NombreActuel)->(Compteur=:=Taille->true;fail);
-	asserta(nombresRencontres(NombreActuel)),
-	Compteur2 is Compteur + 1,
-	X is NombreActuel + IndiceCourant,
-	Y is IndiceCourant - (Taille - NombreActuel),
-	(X =< Taille ->
-	prochainIndice(Liste,X,ProchainNombre),verifierPermutation(Liste,X,Taille,ProchainNombre,Compteur2) ;
-	prochainIndice(Liste,Y,ProchainNombre),verifierPermutation(Liste,Y,Taille,ProchainNombre,Compteur2))).
-	
-% Crée une liste à partir de la taille donnée
+% Create a list with a given length
 creation(0,[]).
 creation(N,L):-
 	N>0,
